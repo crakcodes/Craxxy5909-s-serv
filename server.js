@@ -1,11 +1,11 @@
-// server.js
 const express = require('express');
 const util = require('minecraft-server-util');
+const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+app.use(cors()); // autorise toutes les requêtes cross-origin
 
-// Ton serveur Minecraft moddé
+const PORT = process.env.PORT || 3000;
 const HOST = '91.197.5.218';
 const MC_PORT = 27390;
 
