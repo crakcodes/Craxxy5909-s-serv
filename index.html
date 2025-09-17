@@ -5,102 +5,41 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Craxxy5909's Serv — Statut</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-    }
-    .card {
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 500px;
-      width: 100%;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    }
-    h1 {
-      margin: 0 0 10px;
-      font-size: 22px;
-      color: #38bdf8;
-    }
-    .status {
-      margin: 10px 0;
-      font-weight: bold;
-      padding: 8px;
-      border-radius: 6px;
-      text-align: center;
-    }
-    .online {
-      background: #064e3b;
-      color: #4ade80;
-    }
-    .offline {
-      background: #581c1c;
-      color: #f87171;
-    }
-    .info {
-      margin: 10px 0;
-      padding: 8px;
-      background: #0f172a;
-      border-radius: 6px;
-    }
-    button {
-      background: #38bdf8;
-      color: #0f172a;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    button:hover {
-      background: #0ea5e9;
-    }
+    body { font-family: Arial; background: #0f172a; color: #e2e8f0; display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; }
+    .card { background:#1e293b; padding:20px; border-radius:12px; max-width:500px; width:100%; box-shadow:0 4px 20px rgba(0,0,0,0.4);}
+    h1 { margin:0 0 10px; font-size:22px; color:#38bdf8; }
+    .status { margin:10px 0; font-weight:bold; padding:8px; border-radius:6px; text-align:center; }
+    .online { background:#064e3b; color:#4ade80; }
+    .offline { background:#581c1c; color:#f87171; }
+    .info { margin:10px 0; padding:8px; background:#0f172a; border-radius:6px; }
+    button { background:#38bdf8; color:#0f172a; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; margin-top:10px; font-weight:bold; }
+    button:hover { background:#0ea5e9; }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>🌍 Craxxy5909's Serv (moddé)</h1>
     <div id="status" class="status">Chargement...</div>
-    <div class="info">
-      <strong>Joueurs :</strong> <span id="players">—</span>
-    </div>
-    <div class="info">
-      <strong>Version :</strong> <span id="version">—</span>
-    </div>
-    <div class="info">
-      <strong>MOTD :</strong> <span id="motd">—</span>
-    </div>
+    <div class="info"><strong>Joueurs :</strong> <span id="players">—</span></div>
+    <div class="info"><strong>Version :</strong> <span id="version">—</span></div>
+    <div class="info"><strong>MOTD :</strong> <span id="motd">—</span></div>
     <button onclick="checkServer()">🔄 Rafraîchir</button>
-    <p style="font-size:12px;color:#94a3b8;margin-top:10px;">
-      Vérification automatique toutes les 15 secondes.<br>
-      <strong>⚠️ Autorisez les notifications dans votre navigateur.</strong>
-    </p>
+    <p style="font-size:12px;color:#94a3b8;margin-top:10px;"><strong>⚠️ Autorisez les notifications dans votre navigateur.</strong></p>
   </div>
 
   <script>
-    const SERVER = '91.197.5.218:27390';
-    const API = 'http://localhost:3000/status';
+    const API = 'https://ton-projet.up.railway.app/status'; // <=== Mets ici l'URL de ton proxy
 
-    let lastOnline = null; // true/false
-    let lastPlayers = [];  // anciens pseudos
+    let lastOnline = null;
+    let lastPlayers = [];
 
-    // Demander permission notification au chargement
-    if ("Notification" in window) {
-      if (Notification.permission === "default") {
-        Notification.requestPermission();
-      }
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
     }
 
     function notify(title, body) {
       if ("Notification" in window && Notification.permission === "granted") {
-        new Notification(title, { body: body });
+        new Notification(title, { body });
       }
     }
 
@@ -120,32 +59,22 @@
 
           playersEl.textContent = data.players.online + " / " + data.players.max;
           versionEl.textContent = data.version || "—";
-          motdEl.textContent = (data.motd && data.motd.clean) ? data.motd.clean.join(" ") : "—";
+          motdEl.textContent = data.motd || "—";
 
-          // --- Notifications ---
-          if (lastOnline === false) {
-            notify("Serveur en ligne ✅", "Craxxy5909's Serv vient de démarrer !");
-          }
-          if (Array.isArray(data.players.list)) {
-            const current = data.players.list;
-            // nouveaux joueurs connectés
+          if (lastOnline === false) notify("Serveur en ligne ✅", "Craxxy5909's Serv vient de démarrer !");
+
+          if (Array.isArray(data.players.sample)) {
+            const current = data.players.sample.map(p => p.name);
             current.forEach(p => {
-              if (!lastPlayers.includes(p)) {
-                notify("👤 Connexion", p + " vient de rejoindre le serveur.");
-              }
+              if (!lastPlayers.includes(p)) notify("👤 Connexion", p + " vient de rejoindre le serveur.");
             });
-            // joueurs déconnectés
             lastPlayers.forEach(p => {
-              if (!current.includes(p)) {
-                notify("👋 Déconnexion", p + " a quitté le serveur.");
-              }
+              if (!current.includes(p)) notify("👋 Déconnexion", p + " a quitté le serveur.");
             });
             lastPlayers = current;
-          } else {
-            lastPlayers = [];
-          }
-          lastOnline = true;
+          } else lastPlayers = [];
 
+          lastOnline = true;
         } else {
           statusEl.textContent = "❌ HORS LIGNE";
           statusEl.className = "status offline";
@@ -153,19 +82,16 @@
           versionEl.textContent = "—";
           motdEl.textContent = "—";
 
-          if (lastOnline === true) {
-            notify("Serveur arrêté ❌", "Craxxy5909's Serv vient de s'éteindre.");
-          }
+          if (lastOnline === true) notify("Serveur arrêté ❌", "Craxxy5909's Serv vient de s'éteindre.");
           lastOnline = false;
           lastPlayers = [];
         }
-      } catch (err) {
-        statusEl.textContent = "⚠️ Erreur (API inaccessible)";
+      } catch {
+        statusEl.textContent = "⚠️ Erreur API";
         statusEl.className = "status offline";
       }
     }
 
-    // première vérif + toutes les 15s
     checkServer();
     setInterval(checkServer, 15000);
   </script>
