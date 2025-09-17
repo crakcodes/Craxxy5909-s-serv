@@ -14,8 +14,8 @@ app.get('/status', async (req, res) => {
     const result = await util.status(HOST, MC_PORT, { timeout: 5000 });
 
     // Sanitize MOTD et version
-    const motd = result.motd?.clean || result.motd?.raw || "—";
-    const version = result.version?.name || "—";
+    const motd = String(result.motd?.clean || result.motd?.raw || "—");
+    const version = String(result.version?.name || "—");
 
     // Sanitize joueurs
     const players = {
@@ -28,8 +28,8 @@ app.get('/status', async (req, res) => {
 
     res.json({
       online: true,
-      motd: String(motd),
-      version: String(version),
+      motd,
+      version,
       players
     });
 
