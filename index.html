@@ -75,10 +75,9 @@
 
     async function fetchStatus() {
       try {
-        const res = await fetch(API);
+        const res = await fetch(API, { cache: "no-store", mode: "cors" });
         const data = await res.json();
 
-        // Statut serveur
         if (data.online) {
           statusEl.textContent = "✅ EN LIGNE";
           statusEl.className = "status online";
@@ -87,14 +86,12 @@
             notify("on", "Serveur en ligne ✅", "Craxxy5909's Serv vient de démarrer !");
           }
 
-          // Joueurs
           playersEl.textContent = `${data.players.online} / ${data.players.max}`;
           const currentPlayers = Array.isArray(data.players.sample) ? data.players.sample.map(p => p.name) : [];
           playersListEl.innerHTML = currentPlayers.length > 0
             ? currentPlayers.map(p => `<li>${p}</li>`).join('')
             : '<li>Aucun joueur connecté</li>';
 
-          // Notifications connexion/déconnexion
           currentPlayers.forEach(p => {
             if (!lastPlayers.includes(p)) notify("join", "👤 Connexion", `${p} est connecté`);
           });
@@ -103,12 +100,10 @@
           });
           lastPlayers = currentPlayers;
 
-          // MOTD et version
           motdEl.textContent = data.motd || "—";
           versionEl.textContent = data.version || "—";
 
           lastOnline = true;
-
         } else {
           statusEl.textContent = "❌ HORS LIGNE";
           statusEl.className = "status offline";

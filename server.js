@@ -12,14 +12,28 @@ const MC_PORT = 27390;
 app.get('/status', async (req, res) => {
   try {
     const result = await util.status(HOST, MC_PORT, { timeout: 5000 });
+
+    // Créer un tableau de joueurs simple avec juste le pseudo
+    const players = {
+      online: result.players.online,
+      max: result.players.max,
+      sample: Array.isArray(result.players.sample)
+        ? result.players.sample.map(p => ({ name: p.name })) 
+        : []
+    };
+
     res.json({
       online: true,
       motd: result.motd?.clean || result.motd?.raw || "—",
       version: result.version?.name || "—",
-      players: result.players
+      players
     });
+
   } catch (err) {
-    res.json({ online: false });
+    res.json({ 
+      online: false,
+      players: { online: 0, max: 0, sample: [] } 
+    });
   }
 });
 
