@@ -13,26 +13,32 @@ app.get('/status', async (req, res) => {
   try {
     const result = await util.status(HOST, MC_PORT, { timeout: 5000 });
 
-    // Créer un tableau de joueurs simple avec juste le pseudo
+    // Sanitize MOTD et version
+    const motd = result.motd?.clean || result.motd?.raw || "—";
+    const version = result.version?.name || "—";
+
+    // Sanitize joueurs
     const players = {
       online: result.players.online,
       max: result.players.max,
       sample: Array.isArray(result.players.sample)
-        ? result.players.sample.map(p => ({ name: p.name })) 
+        ? result.players.sample.map(p => ({ name: String(p.name) })) 
         : []
     };
 
     res.json({
       online: true,
-      motd: result.motd?.clean || result.motd?.raw || "—",
-      version: result.version?.name || "—",
+      motd: String(motd),
+      version: String(version),
       players
     });
 
   } catch (err) {
     res.json({ 
       online: false,
-      players: { online: 0, max: 0, sample: [] } 
+      motd: "—",
+      version: "—",
+      players: { online: 0, max: 0, sample: [] }
     });
   }
 });

@@ -87,7 +87,7 @@
           }
 
           playersEl.textContent = `${data.players.online} / ${data.players.max}`;
-          const currentPlayers = Array.isArray(data.players.sample) ? data.players.sample.map(p => p.name) : [];
+          const currentPlayers = Array.isArray(data.players.sample) ? data.players.sample.map(p => String(p.name)) : [];
           playersListEl.innerHTML = currentPlayers.length > 0
             ? currentPlayers.map(p => `<li>${p}</li>`).join('')
             : '<li>Aucun joueur connecté</li>';
@@ -100,8 +100,8 @@
           });
           lastPlayers = currentPlayers;
 
-          motdEl.textContent = data.motd || "—";
-          versionEl.textContent = data.version || "—";
+          motdEl.textContent = String(data.motd);
+          versionEl.textContent = String(data.version);
 
           lastOnline = true;
         } else {
