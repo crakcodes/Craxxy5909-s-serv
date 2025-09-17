@@ -1,108 +1,142 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Craxxy5909's Serv — Statut</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statut Minecraft</title>
   <style>
-    body { font-family: Arial; background: #0f172a; color: #e2e8f0; display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; }
-    .card { background:#1e293b; padding:20px; border-radius:12px; max-width:500px; width:100%; box-shadow:0 4px 20px rgba(0,0,0,0.4);}
-    h1 { margin:0 0 10px; font-size:22px; color:#38bdf8; }
-    .status { margin:10px 0; font-weight:bold; padding:8px; border-radius:6px; text-align:center; }
-    .online { background:#064e3b; color:#4ade80; }
-    .offline { background:#581c1c; color:#f87171; }
-    .info { margin:10px 0; padding:8px; background:#0f172a; border-radius:6px; }
-    button { background:#38bdf8; color:#0f172a; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; margin-top:10px; font-weight:bold; }
-    button:hover { background:#0ea5e9; }
+    body { font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; }
+    h1 { color: #38bdf8; text-align: center; }
+    .status { font-weight: bold; font-size: 1.5em; margin-bottom: 10px; }
+    .online { color: #4ade80; }
+    .offline { color: #f87171; }
+    .section { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+    .section-title { font-weight: bold; color: #38bdf8; margin-bottom: 5px; }
+    ul { margin: 0; padding-left: 20px; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>🌍 Craxxy5909's Serv (moddé)</h1>
-    <div id="status" class="status">Chargement...</div>
-    <div class="info"><strong>Joueurs :</strong> <span id="players">—</span></div>
-    <div class="info"><strong>Version :</strong> <span id="version">—</span></div>
-    <div class="info"><strong>MOTD :</strong> <span id="motd">—</span></div>
-    <button onclick="checkServer()">🔄 Rafraîchir</button>
-    <p style="font-size:12px;color:#94a3b8;margin-top:10px;"><strong>⚠️ Autorisez notifications et son dans votre navigateur.</strong></p>
+  <h1>🌍 Craxxy5909's Serv</h1>
+  <div id="status" class="status offline">Chargement...</div>
+
+  <div class="section">
+    <div class="section-title">MOTD :</div>
+    <div id="motd">—</div>
   </div>
 
-  <audio id="notifSound">
-    <source src="https://freesound.org/data/previews/522/522425_2550195-lq.mp3" type="audio/mpeg">
-  </audio>
+  <div class="section">
+    <div class="section-title">Version :</div>
+    <div id="version">—</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Joueurs :</div>
+    <div id="players">—</div>
+    <ul id="playersList"></ul>
+  </div>
+
+  <!-- Sons notifications -->
+  <audio id="soundOn"><source src="https://freesound.org/data/previews/522/522425_2550195-lq.mp3" type="audio/mpeg"></audio>
+  <audio id="soundOff"><source src="https://freesound.org/data/previews/337/337049_3232293-lq.mp3" type="audio/mpeg"></audio>
+  <audio id="soundJoin"><source src="https://freesound.org/data/previews/401/401336_5121236-lq.mp3" type="audio/mpeg"></audio>
+  <audio id="soundLeave"><source src="https://freesound.org/data/previews/256/256113_3263906-lq.mp3" type="audio/mpeg"></audio>
 
   <script>
     const API = 'https://craxxy5909-s-serv.onrender.com/status';
+    const statusEl = document.getElementById('status');
+    const motdEl = document.getElementById('motd');
+    const versionEl = document.getElementById('version');
+    const playersEl = document.getElementById('players');
+    const playersListEl = document.getElementById('playersList');
 
     let lastOnline = null;
     let lastPlayers = [];
-    const sound = document.getElementById('notifSound');
+
+    const sounds = {
+      on: document.getElementById('soundOn'),
+      off: document.getElementById('soundOff'),
+      join: document.getElementById('soundJoin'),
+      leave: document.getElementById('soundLeave')
+    };
 
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
 
-    function notify(title, body) {
+    function notify(type, title, body) {
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification(title, { body });
       }
-      sound.currentTime = 0;
-      sound.play().catch(()=>{});
+      if (sounds[type]) {
+        sounds[type].currentTime = 0;
+        sounds[type].play().catch(()=>{});
+      }
     }
 
-    async function checkServer() {
-      const statusEl = document.getElementById('status');
-      const playersEl = document.getElementById('players');
-      const versionEl = document.getElementById('version');
-      const motdEl = document.getElementById('motd');
-
+    async function fetchStatus() {
       try {
-        const res = await fetch(API, { cache: "no-store" });
+        const res = await fetch(API);
         const data = await res.json();
 
+        // Statut serveur
         if (data.online) {
           statusEl.textContent = "✅ EN LIGNE";
           statusEl.className = "status online";
 
-          playersEl.textContent = data.players.online + " / " + data.players.max;
-          versionEl.textContent = data.version || "—";
-          motdEl.textContent = data.motd || "—";
+          if (lastOnline === false) {
+            notify("on", "Serveur en ligne ✅", "Craxxy5909's Serv vient de démarrer !");
+          }
 
-          if (lastOnline === false) notify("Serveur en ligne ✅", "Craxxy5909's Serv vient de démarrer !");
+          // Joueurs
+          playersEl.textContent = `${data.players.online} / ${data.players.max}`;
+          const currentPlayers = Array.isArray(data.players.sample) ? data.players.sample.map(p => p.name) : [];
+          playersListEl.innerHTML = currentPlayers.length > 0
+            ? currentPlayers.map(p => `<li>${p}</li>`).join('')
+            : '<li>Aucun joueur connecté</li>';
 
-          const currentPlayers = Array.isArray(data.players.sample) 
-            ? data.players.sample.map(p => p.name) 
-            : [];
-
+          // Notifications connexion/déconnexion
           currentPlayers.forEach(p => {
-            if (!lastPlayers.includes(p)) notify("👤 Connexion", p + " vient de rejoindre le serveur.");
+            if (!lastPlayers.includes(p)) notify("join", "👤 Connexion", `${p} est connecté`);
           });
           lastPlayers.forEach(p => {
-            if (!currentPlayers.includes(p)) notify("👋 Déconnexion", p + " a quitté le serveur.");
+            if (!currentPlayers.includes(p)) notify("leave", "👋 Déconnexion", `${p} est déconnecté`);
           });
-
           lastPlayers = currentPlayers;
+
+          // MOTD et version
+          motdEl.textContent = data.motd || "—";
+          versionEl.textContent = data.version || "—";
+
           lastOnline = true;
 
         } else {
           statusEl.textContent = "❌ HORS LIGNE";
           statusEl.className = "status offline";
-          playersEl.textContent = "—";
-          versionEl.textContent = "—";
-          motdEl.textContent = "—";
 
-          if (lastOnline === true) notify("Serveur arrêté ❌", "Craxxy5909's Serv vient de s'éteindre.");
+          if (lastOnline === true) {
+            notify("off", "Serveur arrêté ❌", "Craxxy5909's Serv vient de s'éteindre.");
+          }
+
+          motdEl.textContent = "—";
+          versionEl.textContent = "—";
+          playersEl.textContent = "—";
+          playersListEl.innerHTML = "<li>Serveur hors ligne</li>";
           lastOnline = false;
           lastPlayers = [];
         }
+
       } catch (err) {
         statusEl.textContent = "⚠️ Erreur API";
         statusEl.className = "status offline";
+        motdEl.textContent = "—";
+        versionEl.textContent = "—";
+        playersEl.textContent = "—";
+        playersListEl.innerHTML = "<li>Impossible de récupérer les infos</li>";
       }
     }
 
-    checkServer();
-    setInterval(checkServer, 15000);
+    fetchStatus();
+    setInterval(fetchStatus, 15000);
   </script>
 </body>
 </html>
